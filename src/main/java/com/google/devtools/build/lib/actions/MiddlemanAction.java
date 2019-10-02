@@ -22,6 +22,8 @@ import com.google.devtools.build.lib.skyframe.serialization.autocodec.AutoCodec;
 import com.google.devtools.build.lib.skyframe.serialization.autocodec.AutoCodec.VisibleForSerialization;
 import com.google.devtools.build.lib.util.Fingerprint;
 
+import javax.annotation.Nullable;
+
 /**
  * An action that depends on a set of inputs and creates a single output file whenever it runs. This
  * is useful for bundling up a bunch of dependencies that are shared between individual targets in
@@ -93,6 +95,12 @@ public final class MiddlemanAction extends AbstractAction {
   @Override
   public String prettyPrint() {
     return description + " for " + Label.print(getOwner().getLabel());
+  }
+
+  @Override
+  @Nullable
+  public Artifact getDiagnostics() {
+    return null;
   }
 
   @Override

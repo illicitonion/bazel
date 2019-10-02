@@ -15,6 +15,7 @@ package com.google.devtools.build.lib.actions;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.devtools.build.lib.concurrent.ThreadSafety.Immutable;
 import com.google.devtools.build.lib.concurrent.ThreadSafety.ThreadSafe;
 import com.google.devtools.build.lib.shell.TerminationStatus;
@@ -22,6 +23,7 @@ import com.google.devtools.build.lib.vfs.Path;
 import com.google.protobuf.ByteString;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -211,7 +213,7 @@ public interface SpawnResult {
       String messagePrefix, String message, boolean catastrophe, boolean forciblyRunRemotely);
 
   /** Returns a file path to the action metadata log. */
-  Optional<MetadataLog> getActionMetadataLog();
+  List<MetadataLog> getActionMetadataLog();
 
   /**
    * Basic implementation of {@link SpawnResult}.
@@ -233,7 +235,7 @@ public interface SpawnResult {
     private final String failureMessage;
     private final ActionInput inMemoryOutputFile;
     private final ByteString inMemoryContents;
-    private final Optional<MetadataLog> actionMetadataLog;
+    private final ImmutableList<MetadataLog> actionMetadataLog;
 
     SimpleSpawnResult(Builder builder) {
       this.exitCode = builder.exitCode;
@@ -253,7 +255,7 @@ public interface SpawnResult {
       this.failureMessage = builder.failureMessage;
       this.inMemoryOutputFile = builder.inMemoryOutputFile;
       this.inMemoryContents = builder.inMemoryContents;
-      this.actionMetadataLog = builder.actionMetadataLog;
+      this.actionMetadataLog = builder.actionMetadataLog.build();
     }
 
     @Override
@@ -380,7 +382,7 @@ public interface SpawnResult {
     }
 
     @Override
-    public Optional<MetadataLog> getActionMetadataLog() {
+    public List<MetadataLog> getActionMetadataLog() {
       return actionMetadataLog;
     }
   }
@@ -400,7 +402,7 @@ public interface SpawnResult {
     private Optional<Long> numBlockOutputOperations = Optional.empty();
     private Optional<Long> numBlockInputOperations = Optional.empty();
     private Optional<Long> numInvoluntaryContextSwitches = Optional.empty();
-    private Optional<MetadataLog> actionMetadataLog = Optional.empty();
+    private ImmutableList.Builder<MetadataLog> actionMetadataLog = ImmutableList.builder();
     private boolean cacheHit;
     private String failureMessage = "";
     /* Invariant: Either both have a value or both are null. */
@@ -491,8 +493,8 @@ public interface SpawnResult {
       return this;
     }
 
-    public Builder setActionMetadataLog(MetadataLog actionMetadataLog) {
-      this.actionMetadataLog = Optional.of(actionMetadataLog);
+    public Builder addActionMetadataLog(MetadataLog actionMetadataLog) {
+      this.actionMetadataLog.add(actionMetadataLog);
       return this;
     }
   }

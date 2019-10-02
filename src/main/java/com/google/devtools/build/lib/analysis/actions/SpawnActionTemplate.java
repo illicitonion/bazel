@@ -34,6 +34,8 @@ import com.google.devtools.build.lib.collect.nestedset.NestedSet;
 import com.google.devtools.build.lib.collect.nestedset.NestedSetBuilder;
 import com.google.devtools.build.lib.util.Fingerprint;
 import com.google.devtools.build.lib.vfs.PathFragment;
+
+import javax.annotation.Nullable;
 import java.util.Map;
 
 /** An {@link ActionTemplate} that expands into {@link SpawnAction}s at execution time. */
@@ -194,6 +196,12 @@ public final class SpawnActionTemplate extends ActionKeyCacher
   @Override
   public ImmutableSet<Artifact> getOutputs() {
     return ImmutableSet.of(outputTreeArtifact);
+  }
+
+  @Override
+  @Nullable
+  public Artifact getDiagnostics() {
+    return null;
   }
 
   @Override

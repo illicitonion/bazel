@@ -83,6 +83,7 @@ public final class ExtraAction extends SpawnAction {
         createInputs(shadowedAction.getInputs(), ImmutableList.<Artifact>of(), extraActionInputs),
         outputs,
         Iterables.getFirst(outputs, null),
+        null,
         AbstractAction.DEFAULT_RESOURCE_SET,
         CommandLines.of(argv),
         CommandLineLimits.UNLIMITED,

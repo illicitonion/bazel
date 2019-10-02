@@ -307,6 +307,7 @@ public class SkylarkActionFactory implements SkylarkActionFactoryApi {
       Object envUnchecked,
       Object executionRequirementsUnchecked,
       Object inputManifestsUnchecked,
+      Object diagnosticsFile,
       Location location)
       throws EvalException {
     context.checkMutable("actions.run");
@@ -341,6 +342,7 @@ public class SkylarkActionFactory implements SkylarkActionFactoryApi {
         envUnchecked,
         executionRequirementsUnchecked,
         inputManifestsUnchecked,
+        diagnosticsFile,
         location,
         builder);
   }
@@ -462,6 +464,7 @@ public class SkylarkActionFactory implements SkylarkActionFactoryApi {
         envUnchecked,
         executionRequirementsUnchecked,
         inputManifestsUnchecked,
+        /*diagnosticsFile=*/ Runtime.NONE,
         location,
         builder);
   }
@@ -516,6 +519,7 @@ public class SkylarkActionFactory implements SkylarkActionFactoryApi {
       Object envUnchecked,
       Object executionRequirementsUnchecked,
       Object inputManifestsUnchecked,
+      Object diagnosticFile,
       Location location,
       StarlarkAction.Builder builder)
       throws EvalException {
@@ -536,6 +540,10 @@ public class SkylarkActionFactory implements SkylarkActionFactoryApi {
       throw new EvalException(location, "param 'outputs' may not be empty");
     }
     builder.addOutputs(outputArtifacts);
+    if (diagnosticFile != Runtime.NONE) {
+      builder.addOutput((Artifact) diagnosticFile);
+      builder.setDiagnosticFile((Artifact) diagnosticFile);
+    }
 
     if (unusedInputsList != Runtime.NONE) {
       if (!starlarkSemantics.experimentalStarlarkUnusedInputsList()) {

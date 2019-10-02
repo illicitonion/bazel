@@ -56,6 +56,7 @@ public class GenRuleAction extends SpawnAction {
         inputs,
         outputs,
         Iterables.getFirst(outputs, null),
+        null,
         AbstractAction.DEFAULT_RESOURCE_SET,
         commandLines,
         CommandLineLimits.UNLIMITED,

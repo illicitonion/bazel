@@ -375,6 +375,7 @@ public class JavaHeaderCompileActionBuilder {
               /* inputs= */ mandatoryInputs.build(),
               /* outputs= */ outputs,
               /* primaryOutput= */ outputJar,
+              /* diagnosticFile= */ null,
               /* resourceSet= */ AbstractAction.DEFAULT_RESOURCE_SET,
               /* commandLines= */ CommandLines.builder()
                   .addCommandLine(executableLine)

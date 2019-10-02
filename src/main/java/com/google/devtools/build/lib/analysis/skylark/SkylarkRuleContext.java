@@ -878,6 +878,7 @@ public final class SkylarkRuleContext implements SkylarkRuleContextApi {
       Object envUnchecked,
       Object executionRequirementsUnchecked,
       Object inputManifestsUnchecked,
+      Object diagnosticsFile,
       Location loc,
       StarlarkThread thread)
       throws EvalException {
@@ -903,6 +904,7 @@ public final class SkylarkRuleContext implements SkylarkRuleContextApi {
               envUnchecked,
               executionRequirementsUnchecked,
               inputManifestsUnchecked,
+              diagnosticsFile,
               loc);
 
     } else {

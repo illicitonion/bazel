@@ -469,6 +469,8 @@ message ActionExecuted {
 
   // List of paths to log files
   repeated File action_metadata_logs = 10;
+
+  File diagnostic_output = 11;
 }
 
 // Collection of all output files belonging to that output group.

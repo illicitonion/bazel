@@ -291,6 +291,12 @@ public final class CppCompileActionTemplate extends ActionKeyCacher
   }
 
   @Override
+  @Nullable
+  public Artifact getDiagnostics() {
+    return null;
+  }
+
+  @Override
   public Iterable<String> getClientEnvironmentVariables() {
     return ImmutableList.<String>of();
   }

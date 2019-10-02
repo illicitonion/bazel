@@ -194,12 +194,22 @@ final class WorkerSpawnRunner implements SpawnRunner {
     response.getOutputBytes().writeTo(outErr.getErrorStream());
 
     int exitCode = response.getExitCode();
-    return new SpawnResult.Builder()
+
+    SpawnResult.Builder builder = new SpawnResult.Builder()
         .setRunnerName(getName())
         .setExitCode(exitCode)
         .setStatus(exitCode == 0 ? SpawnResult.Status.SUCCESS : SpawnResult.Status.NON_ZERO_EXIT)
-        .setWallTime(wallTime)
-        .build();
+        .setWallTime(wallTime);
+
+    if (spawn.getDiagnosticsFile() != null) {
+      builder.addActionMetadataLog(
+          new SpawnResult.MetadataLog(
+              "diagnostics",
+              context.getPathResolver().toPath(spawn.getDiagnosticsFile())
+      ));
+    }
+
+    return builder.build();
   }
 
   /**
