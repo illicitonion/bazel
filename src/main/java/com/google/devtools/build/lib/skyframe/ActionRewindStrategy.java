@@ -273,8 +273,12 @@ public class ActionRewindStrategy {
         }
       }
 
-      if (lostInput instanceof Artifact
-          && failedActionDeps.contains(Artifact.key((Artifact) lostInput))) {
+      if (lostInput instanceof Artifact) {
+        // TODO: The below check appears to check that the set of SkyKeys contains an element which
+        // exact-matches the lost input, but the lost input itself is actually contained in the the NestedSet _inside_ one of the SkyKeys which is a ArtifactNestedSetKey.
+        // This logic should probably do something along the lines of:
+        // && failedActionDeps.stream.anyMatch(skyKey -> skyKey instanceof ArtifactNestedSetKey && ((ArtifactNestedSetKey)skyKey).getSet().contains(Artifact.key((Artifact) lostInput)) {
+          //&& failedActionDeps.contains(Artifact.key((Artifact) lostInput))) {
         checkDerived(
             /*lostInputQualifier=*/ "", (Artifact) lostInput, failedAction, lostInputsException);
 

@@ -25,6 +25,7 @@ import build.bazel.remote.execution.v2.PriorityCapabilities.PriorityRange;
 import build.bazel.remote.execution.v2.ServerCapabilities;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.devtools.build.lib.actions.ExecException;
 import com.google.devtools.build.lib.remote.options.RemoteOptions;
 import com.google.devtools.build.lib.remote.util.TracingMetadataUtils;
 import io.grpc.CallCredentials;
@@ -79,6 +80,9 @@ class RemoteServerCapabilities {
       if (e.getCause() instanceof IOException) {
         throw (IOException) e.getCause();
       }
+      throw new IOException(e);
+    } catch (ExecException e) {
+      // TODO: Work out what to actually do here
       throw new IOException(e);
     } finally {
       withMetadata.detach(previous);

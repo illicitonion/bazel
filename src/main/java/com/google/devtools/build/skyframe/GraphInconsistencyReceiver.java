@@ -36,10 +36,11 @@ public interface GraphInconsistencyReceiver {
       SkyKey key, @Nullable Collection<SkyKey> otherKeys, Inconsistency inconsistency);
 
   /** A {@link GraphInconsistencyReceiver} that crashes on any inconsistency. */
+  // TODO: Add a flag to decide whether to allow Inconsistency.PARENT_FORCE_REBUILD_OF_CHILD - for now, just ignore all inconsistency.
   GraphInconsistencyReceiver THROWING =
       (key, otherKey, inconsistency) -> {
-        throw new IllegalStateException(
-            "Unexpected inconsistency: " + key + ", " + otherKey + ", " + inconsistency);
+//        throw new IllegalStateException(
+//            "Unexpected inconsistency: " + key + ", " + otherKey + ", " + inconsistency);
       };
 
   static String listChildren(Collection<SkyKey> children) {
@@ -48,6 +49,6 @@ public interface GraphInconsistencyReceiver {
   }
 
   default boolean restartPermitted() {
-    return false;
+    return true;
   }
 }

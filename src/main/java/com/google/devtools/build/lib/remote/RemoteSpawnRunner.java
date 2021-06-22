@@ -49,6 +49,7 @@ import com.google.devtools.build.lib.actions.ActionInput;
 import com.google.devtools.build.lib.actions.Artifact;
 import com.google.devtools.build.lib.actions.CommandLines.ParamFileActionInput;
 import com.google.devtools.build.lib.actions.ExecException;
+import com.google.devtools.build.lib.actions.LostInputsExecException;
 import com.google.devtools.build.lib.actions.Spawn;
 import com.google.devtools.build.lib.actions.SpawnMetrics;
 import com.google.devtools.build.lib.actions.SpawnResult;
@@ -282,7 +283,7 @@ public class RemoteSpawnRunner implements SpawnRunner {
     // Look up action cache, and reuse the action output if it is found.
     ActionKey actionKey = digestUtil.computeActionKey(action);
     Context withMetadata =
-        TracingMetadataUtils.contextWithMetadata(buildRequestId, commandId, actionKey)
+        TracingMetadataUtils.contextWithMetadata(buildRequestId, commandId, actionKey.getDigest().getHash())
             .withValue(NetworkTime.CONTEXT_KEY, networkTime);
     Context previous = withMetadata.attach();
     Profiler prof = Profiler.instance();
@@ -356,7 +357,18 @@ public class RemoteSpawnRunner implements SpawnRunner {
                 additionalInputs.put(commandHash, command);
                 Duration networkTimeStart = networkTime.getDuration();
                 Stopwatch uploadTime = Stopwatch.createStarted();
-                remoteCache.ensureInputsPresent(merkleTree, additionalInputs);
+                try {
+                  remoteCache.ensureInputsPresent(merkleTree, additionalInputs, actionKey.toString());
+                } catch (BulkTransferException e) {
+                  // TODO: Check over all exceptions and merge them, maybe as a built-in piece of
+                  // functionality in BulkTransferException (like isOnlyCausedByCacheNotFoundException),
+                  // rather than asserting there's only one.
+                  if (e.getSuppressed().length == 1 && e instanceof IOException && e.getSuppressed()[0].getCause() != null && e.getSuppressed()[0].getCause() instanceof LostInputsExecException) {
+                    throw (LostInputsExecException) e.getSuppressed()[0].getCause();
+                  } else {
+                    throw e;
+                  }
+                }
                 // subtract network time consumed here to ensure wall clock during upload is not
                 // double
                 // counted, and metrics time computation does not exceed total time

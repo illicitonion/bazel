@@ -22,6 +22,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.devtools.build.lib.actions.ActionInput;
+import com.google.devtools.build.lib.actions.Artifact;
+import com.google.devtools.build.lib.actions.Artifact.DerivedArtifact;
 import com.google.devtools.build.lib.actions.MetadataProvider;
 import com.google.devtools.build.lib.profiler.Profiler;
 import com.google.devtools.build.lib.profiler.SilentCloseable;
@@ -42,17 +44,20 @@ public class MerkleTree {
   /** A path or contents */
   public static class PathOrBytes {
 
-    private final Path path;
-    private final ByteString bytes;
+    @Nullable private final Path path;
+    @Nullable private final ByteString bytes;
+    @Nullable private final ActionInput artifact;
 
-    public PathOrBytes(Path path) {
+    public PathOrBytes(Path path, @Nullable ActionInput artifact) {
       this.path = Preconditions.checkNotNull(path, "path");
       this.bytes = null;
+      this.artifact = artifact;
     }
 
     public PathOrBytes(ByteString bytes) {
       this.bytes = Preconditions.checkNotNull(bytes, "bytes");
       this.path = null;
+      this.artifact = null;
     }
 
     @Nullable
@@ -63,6 +68,11 @@ public class MerkleTree {
     @Nullable
     public ByteString getBytes() {
       return bytes;
+    }
+
+    @Nullable
+    public ActionInput getArtifact() {
+      return artifact;
     }
   }
 
@@ -211,7 +221,7 @@ public class MerkleTree {
 
   private static PathOrBytes toPathOrBytes(DirectoryTree.FileNode file) {
     return file.getPath() != null
-        ? new PathOrBytes(file.getPath())
+        ? new PathOrBytes(file.getPath(), file.getArtifact())
         : new PathOrBytes(file.getBytes());
   }
 }

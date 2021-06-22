@@ -101,7 +101,7 @@ class DirectoryTreeBuilder {
             throw new IOException(String.format("Input '%s' is not a file.", input));
           }
           Digest d = digestUtil.compute(input);
-          currDir.addChild(new FileNode(path.getBaseName(), input, d));
+          currDir.addChild(new FileNode(path.getBaseName(), input, null, d));
           return 1;
         });
   }
@@ -141,7 +141,7 @@ class DirectoryTreeBuilder {
               Digest d = DigestUtil.buildDigest(metadata.getDigest(), metadata.getSize());
               currDir.addChild(
                   new FileNode(
-                      path.getBaseName(), ActionInputHelper.toInputPath(input, execRoot), d));
+                      path.getBaseName(), ActionInputHelper.toInputPath(input, execRoot), input, d));
               return 1;
 
             case DIRECTORY:

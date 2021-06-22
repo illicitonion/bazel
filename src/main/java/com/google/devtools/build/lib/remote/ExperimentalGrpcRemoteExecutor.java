@@ -21,6 +21,7 @@ import build.bazel.remote.execution.v2.ExecutionGrpc;
 import build.bazel.remote.execution.v2.ExecutionGrpc.ExecutionBlockingStub;
 import build.bazel.remote.execution.v2.WaitExecutionRequest;
 import com.google.common.base.Preconditions;
+import com.google.devtools.build.lib.actions.ExecException;
 import com.google.devtools.build.lib.authandtls.CallCredentialsProvider;
 import com.google.devtools.build.lib.concurrent.ThreadSafety.ThreadSafe;
 import com.google.devtools.build.lib.remote.RemoteRetrier.ProgressiveBackoff;
@@ -108,7 +109,7 @@ public class ExperimentalGrpcRemoteExecutor implements RemoteExecutionClient {
       this.executionBlockingStubSupplier = executionBlockingStubSupplier;
     }
 
-    ExecuteResponse start() throws IOException, InterruptedException {
+    ExecuteResponse start() throws ExecException, IOException, InterruptedException {
       // Execute has two components: the Execute call and (optionally) the WaitExecution call.
       // This is the simple flow without any errors:
       //
@@ -315,7 +316,12 @@ public class ExperimentalGrpcRemoteExecutor implements RemoteExecutionClient {
     Execution execution =
         new Execution(
             request, observer, retrier, callCredentialsProvider, this::executionBlockingStub);
-    return execution.start();
+    try {
+      return execution.start();
+    } catch (ExecException e) {
+      // TODO: Work out what to actually do here
+      throw new IOException(e);
+    }
   }
 
   @Override

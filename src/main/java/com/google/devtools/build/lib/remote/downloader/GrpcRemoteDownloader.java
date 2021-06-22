@@ -22,6 +22,7 @@ import build.bazel.remote.asset.v1.Qualifier;
 import build.bazel.remote.execution.v2.Digest;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
+import com.google.devtools.build.lib.actions.ExecException;
 import com.google.devtools.build.lib.bazel.repository.downloader.Checksum;
 import com.google.devtools.build.lib.bazel.repository.downloader.Downloader;
 import com.google.devtools.build.lib.bazel.repository.downloader.HashOutputStream;
@@ -126,6 +127,9 @@ public class GrpcRemoteDownloader implements AutoCloseable, Downloader {
                     return null;
                   }));
     } catch (StatusRuntimeException e) {
+      throw new IOException(e);
+    } catch (ExecException e) {
+      // TODO: Work out what to actually do here
       throw new IOException(e);
     }
   }

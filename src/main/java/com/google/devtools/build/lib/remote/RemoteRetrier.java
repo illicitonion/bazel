@@ -18,6 +18,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
+import com.google.devtools.build.lib.actions.ExecException;
 import com.google.devtools.build.lib.remote.options.RemoteOptions;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -110,7 +111,7 @@ public class RemoteRetrier extends Retrier {
    * RuntimeException}.
    */
   @Override
-  public <T> T execute(Callable<T> call) throws IOException, InterruptedException {
+  public <T> T execute(Callable<T> call) throws ExecException, IOException, InterruptedException {
     return execute(call, newBackoff());
   }
 
@@ -120,12 +121,13 @@ public class RemoteRetrier extends Retrier {
    * in {@link RuntimeException}.
    */
   @Override
-  public <T> T execute(Callable<T> call, Backoff backoff) throws IOException, InterruptedException {
+  public <T> T execute(Callable<T> call, Backoff backoff) throws ExecException, IOException, InterruptedException {
     try {
       return super.execute(call, backoff);
     } catch (Exception e) {
       Throwables.throwIfInstanceOf(e, IOException.class);
       Throwables.throwIfInstanceOf(e, InterruptedException.class);
+      Throwables.throwIfInstanceOf(e, ExecException.class);
       Throwables.throwIfUnchecked(e);
       throw new RuntimeException(e);
     }

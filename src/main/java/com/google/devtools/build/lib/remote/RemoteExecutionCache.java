@@ -18,16 +18,25 @@ import static java.lang.String.format;
 
 import build.bazel.remote.execution.v2.Digest;
 import build.bazel.remote.execution.v2.Directory;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.devtools.build.lib.actions.ActionInputDepOwnerMap;
+import com.google.devtools.build.lib.actions.Artifact.DerivedArtifact;
+import com.google.devtools.build.lib.actions.FileArtifactValue.RemoteFileArtifactValue;
+import com.google.devtools.build.lib.actions.LostInputsActionExecutionException;
+import com.google.devtools.build.lib.actions.LostInputsExecException;
 import com.google.devtools.build.lib.remote.common.RemoteCacheClient;
 import com.google.devtools.build.lib.remote.merkletree.MerkleTree;
 import com.google.devtools.build.lib.remote.merkletree.MerkleTree.PathOrBytes;
 import com.google.devtools.build.lib.remote.options.RemoteOptions;
 import com.google.devtools.build.lib.remote.util.DigestUtil;
 import com.google.protobuf.Message;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +62,7 @@ public class RemoteExecutionCache extends RemoteCache {
    * However, remote execution uses a cache to store input files, and that may be a separate
    * end-point from the executor itself, so the functionality lives here.
    */
-  public void ensureInputsPresent(MerkleTree merkleTree, Map<Digest, Message> additionalInputs)
+  public void ensureInputsPresent(MerkleTree merkleTree, Map<Digest, Message> additionalInputs, String actionId)
       throws IOException, InterruptedException {
     Iterable<Digest> allDigests =
         Iterables.concat(merkleTree.getAllDigests(), additionalInputs.keySet());
@@ -62,14 +71,14 @@ public class RemoteExecutionCache extends RemoteCache {
 
     List<ListenableFuture<Void>> uploadFutures = new ArrayList<>();
     for (Digest missingDigest : missingDigests) {
-      uploadFutures.add(uploadBlob(missingDigest, merkleTree, additionalInputs));
+      uploadFutures.add(uploadBlob(missingDigest, merkleTree, additionalInputs, actionId));
     }
 
     waitForBulkTransfer(uploadFutures, /* cancelRemainingOnInterrupt=*/ false);
   }
 
   private ListenableFuture<Void> uploadBlob(
-      Digest digest, MerkleTree merkleTree, Map<Digest, Message> additionalInputs) {
+      Digest digest, MerkleTree merkleTree, Map<Digest, Message> additionalInputs, String actionId) {
     Directory node = merkleTree.getDirectoryByDigest(digest);
     if (node != null) {
       return cacheProtocol.uploadBlob(digest, node.toByteString());
@@ -80,7 +89,22 @@ public class RemoteExecutionCache extends RemoteCache {
       if (file.getBytes() != null) {
         return cacheProtocol.uploadBlob(digest, file.getBytes());
       }
-      return cacheProtocol.uploadFile(digest, file.getPath());
+      return Futures.catchingAsync(cacheProtocol.uploadFile(digest, file.getPath()),
+          FileNotFoundException.class, e -> {
+        if (file.getArtifact() != null) {
+          ActionInputDepOwnerMap owners = new ActionInputDepOwnerMap(
+              ImmutableList.of(file.getArtifact()));
+          RemoteFileArtifactValue artifactValue = new RemoteFileArtifactValue(
+              DigestUtil.toBinaryDigest(digest),
+              digest.getSizeBytes(),
+              /*locationIndex=*/ 1,
+              actionId);
+          owners.put(file.getArtifact(), artifactValue, (DerivedArtifact) file.getArtifact());
+          return Futures.immediateFailedFuture(new LostInputsExecException(ImmutableMap.of(digest.getHash(), file.getArtifact()),
+              owners));
+        }
+            return Futures.immediateFailedFuture(e);
+          }, MoreExecutors.directExecutor());
     }
 
     Message message = additionalInputs.get(digest);

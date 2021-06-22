@@ -17,6 +17,8 @@ import build.bazel.remote.execution.v2.Digest;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
+import com.google.devtools.build.lib.actions.ActionInput;
+import com.google.devtools.build.lib.actions.Artifact;
 import com.google.devtools.build.lib.vfs.Path;
 import com.google.devtools.build.lib.vfs.PathFragment;
 import com.google.protobuf.ByteString;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.SortedSet;
+import javax.annotation.Nullable;
 
 /**
  * Intermediate tree representation of a list of lexicographically sorted list of files. Each node
@@ -71,20 +74,22 @@ final class DirectoryTree {
   static class FileNode extends Node {
     private final Path path;
     private final ByteString data;
+    private final ActionInput artifact;
     private final Digest digest;
 
-    FileNode(String pathSegment, Path path, Digest digest) {
+    FileNode(String pathSegment, Path path, ActionInput artifact, Digest digest) {
       super(pathSegment);
       this.path = Preconditions.checkNotNull(path, "path");
       this.data = null;
       this.digest = Preconditions.checkNotNull(digest, "digest");
+      this.artifact = artifact;
     }
 
     FileNode(String pathSegment, ByteString data, Digest digest) {
       super(pathSegment);
       this.path = null;
+      this.artifact = null;
       this.data = Preconditions.checkNotNull(data, "data");
-      ;
       this.digest = Preconditions.checkNotNull(digest, "digest");
     }
 
@@ -100,9 +105,13 @@ final class DirectoryTree {
       return data;
     }
 
+    @Nullable ActionInput getArtifact() {
+      return artifact;
+    }
+
     @Override
     public int hashCode() {
-      return Objects.hash(super.hashCode(), path, data, digest);
+      return Objects.hash(super.hashCode(), path, data, digest, artifact);
     }
 
     @Override
@@ -112,7 +121,8 @@ final class DirectoryTree {
         return super.equals(other)
             && Objects.equals(path, other.path)
             && Objects.equals(data, other.data)
-            && Objects.equals(digest, other.digest);
+            && Objects.equals(digest, other.digest)
+            && Objects.equals(artifact, other.artifact);
       }
       return false;
     }
