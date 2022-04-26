@@ -167,7 +167,7 @@ public final class SequencedSkyframeExecutor extends SkyframeExecutor {
   private Duration outputTreeDiffCheckingDuration = Duration.ofSeconds(-1L);
 
   private final WorkspaceInfoFromDiffReceiver workspaceInfoFromDiffReceiver;
-  private GraphInconsistencyReceiver inconsistencyReceiver = GraphInconsistencyReceiver.THROWING;
+  private GraphInconsistencyReceiver inconsistencyReceiver = new RewindableGraphInconsistencyReceiver();
 
   private SequencedSkyframeExecutor(
       Consumer<SkyframeExecutor> skyframeExecutorConsumerOnInit,
@@ -273,11 +273,6 @@ public final class SequencedSkyframeExecutor extends SkyframeExecutor {
       OptionsProvider options)
       throws InterruptedException, AbruptExitException {
     if (evaluatorNeedsReset) {
-      // Rewinding is only supported with no incremental state and no action cache.
-      inconsistencyReceiver =
-          trackIncrementalState || useActionCache(options)
-              ? GraphInconsistencyReceiver.THROWING
-              : new RewindableGraphInconsistencyReceiver();
       // Recreate MemoizingEvaluator so that graph is recreated with correct edge-clearing status,
       // or if the graph doesn't have edges, so that a fresh graph can be used.
       resetEvaluator();
